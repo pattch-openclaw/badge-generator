@@ -8,12 +8,6 @@ import random
 import sys
 
 
-def parse_text_lines(text):
-    """Parse text, respecting newline breaks."""
-    # Split on newlines - each \n becomes a separate line
-    return text.split('\n')
-
-
 def generate_random_pattern(draw, width, height, seed=None):
     """Generate a random pixel art pattern as a tiled pattern."""
     if seed is not None:
@@ -49,33 +43,58 @@ def draw_border(draw, width, height):
                     draw.point((x, y), fill="black")
 
 
-def find_best_font_size(draw, text, max_width, max_height):
-    """Find the largest font size that fits the text with proper wrapping."""
-    for size in range(40, 10, -2):
+def parse_text_lines(text):
+    """Parse text, respecting newline breaks. Each \\n becomes a separate line."""
+    return text.split('\n')
+
+
+def get_font(size):
+    """Get a bold font at the specified size, falling back to default if needed."""
+    font_paths = [
+        "/System/Library/Fonts/Supplemental/Courier.ttc",
+        "/opt/homebrew/share/fonts/DejaVuSansMono-Bold.ttf",
+    ]
+    
+    for path in font_paths:
         try:
-            font = ImageFont.truetype("/System/Library/Fonts/Supplemental/Courier.ttc", size)
+            return ImageFont.truetype(path, size)
         except:
-            try:
-                font = ImageFont.truetype("/opt/homebrew/share/fonts/DejaVuSansMono-Bold.ttf", size)
-            except:
-                continue
-        
+            continue
+    
+    # Fallback to default font
+    return ImageFont.load_default()
+
+
+def find_best_font_size(text, max_width, max_height):
+    """Find the largest font size that fits the text."""
+    for size in range(40, 10, -2):
+        font = get_font(size)
         lines = parse_text_lines(text)
-        line_height = font.getbbox('M')[3] - font.getbbox('M')[1]
-        total_height = line_height * len(lines) + 8 * (len(lines) - 1)
         
-        if total_height <= max_height:
+        # Calculate dimensions for each line
+        max_line_width = 0
+        total_height = 0
+        
+        for line in lines:
+            bbox = font.getbbox(line)
+            max_line_width = max(max_line_width, bbox[2] - bbox[0])
+            total_height += bbox[3] - bbox[1] + 8  # Add line spacing
+        
+        # Remove trailing spacing
+        total_height -= 8
+        
+        if max_line_width <= max_width and total_height <= max_height:
             return font, lines
     
     # Fallback if nothing fits
-    return ImageFont.load_default(), [text]
+    return get_font(12), [text]
 
 
 def generate_badge(text, output_path="badge.png", seed=None, font_size=None):
     """Generate a 128x128 badge.
     
     Args:
-        text: Text to display (newlines \n create line breaks)
+        text: Text to display (newlines \\n create line breaks)
         output_path: Output file path
         seed: Random seed for pattern generation
         font_size: Fixed font size (optional, uses auto-sizing if None)
@@ -91,51 +110,35 @@ def generate_badge(text, output_path="badge.png", seed=None, font_size=None):
     # Draw border
     draw_border(draw, width, height)
     
-    # Find best font size or use specified size
+    # Find font and lines
     padding = 8
     max_text_width = width - padding * 2
     max_text_height = height - padding * 2
     
     if font_size is not None:
-        try:
-            font = ImageFont.truetype("/System/Library/Fonts/Supplemental/Courier.ttc", font_size)
-        except:
-            try:
-                font = ImageFont.truetype("/opt/homebrew/share/fonts/DejaVuSansMono-Bold.ttf", font_size)
-            except:
-                font = ImageFont.load_default()
+        font = get_font(font_size)
         lines = parse_text_lines(text)
     else:
-        font, lines = find_best_font_size(draw, text, max_text_width, max_text_height)
+        font, lines = find_best_font_size(text, max_text_width, max_text_height)
     
     # Calculate total height
-    line_height = font.getbbox('M')[3] - font.getbbox('M')[1]
-    total_height = line_height * len(lines) + 8 * (len(lines) - 1)
-    
-    # If text doesn't fit with auto-sizing, try smaller font
-    if font_size is None and total_height > max_text_height:
-        for size in range(30, 10, -2):
-            try:
-                font = ImageFont.truetype("/System/Library/Fonts/Supplemental/Courier.ttc", size)
-            except:
-                try:
-                    font = ImageFont.truetype("/opt/homebrew/share/fonts/DejaVuSansMono-Bold.ttf", size)
-                except:
-                    continue
-            lines = parse_text_lines(text)
-            line_height = font.getbbox('M')[3] - font.getbbox('M')[1]
-            total_height = line_height * len(lines) + 8 * (len(lines) - 1)
-            if total_height <= max_text_height:
-                break
+    total_height = 0
+    line_heights = []
+    for line in lines:
+        bbox = font.getbbox(line)
+        line_height = bbox[3] - bbox[1]
+        line_heights.append(line_height)
+        total_height += line_height + 8
+    total_height -= 8  # Remove trailing spacing
     
     # Calculate text position for vertical centering
     y = (height - total_height) // 2
     
     # Draw each line with background box for readability
-    for line in lines:
-        text_bbox = draw.textbbox((0, 0), line, font=font)
-        text_width = text_bbox[2] - text_bbox[0]
-        text_height = text_bbox[3] - text_bbox[1]
+    for i, line in enumerate(lines):
+        bbox = font.getbbox(line)
+        text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
         x = (width - text_width) // 2
         
         # Draw text background box with proper padding (inverted color)
@@ -143,7 +146,7 @@ def generate_badge(text, output_path="badge.png", seed=None, font_size=None):
         
         # Draw text (white on black background)
         draw.text((x, y), line, fill=1, font=font)
-        y += text_height + 8
+        y += line_heights[i] + 8
     
     img.save(output_path, "PNG")
     print(f"Saved: {output_path}")
