@@ -133,16 +133,17 @@ def generate_badge(text, output_path="badge.png", seed=None, font_size=None):
     
     # Draw each line with background box for readability
     for line in lines:
-        text_width = draw.textlength(line, font=font)
+        text_bbox = draw.textbbox((0, 0), line, font=font)
+        text_width = text_bbox[2] - text_bbox[0]
+        text_height = text_bbox[3] - text_bbox[1]
         x = (width - text_width) // 2
         
-        # Draw text background box (inverted color)
-        text_height_px = line_height
-        draw.rectangle([x - 2, y - 2, x + text_width + 2, y + text_height_px + 2], fill=0)
+        # Draw text background box with proper padding (inverted color)
+        draw.rectangle([x - 2, y - 2, x + text_width + 2, y + text_height + 2], fill=0)
         
         # Draw text (white on black background)
         draw.text((x, y), line, fill=1, font=font)
-        y += line_height + 8
+        y += text_height + 8
     
     img.save(output_path, "PNG")
     print(f"Saved: {output_path}")
