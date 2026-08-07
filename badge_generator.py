@@ -8,27 +8,110 @@ import random
 import sys
 
 
-def generate_random_pattern(draw, width, height, seed=None):
-    """Generate a random pixel art pattern as a tiled pattern."""
-    if seed is not None:
-        random.seed(seed)
-    
-    tile_size = 16
-    pattern = []
-    
-    # Generate a single tile pattern
-    for ty in range(tile_size):
-        for tx in range(tile_size):
-            if random.random() < 0.3:
-                pattern.append((tx, ty))
-    
-    # Repeat the pattern across the image
+def generate_pattern_seed_1(draw, width, height):
+    """Vertical lines pattern."""
+    tile_size = 8
     for y in range(0, height, tile_size):
         for x in range(0, width, tile_size):
-            for tx, ty in pattern:
-                px, py = x + tx, y + ty
-                if px < width and py < height:
-                    draw.point((px, py), fill="black")
+            if x // tile_size % 2 == 0:
+                draw.rectangle([x, y, x + tile_size - 1, y + tile_size - 1], fill="black")
+
+
+def generate_pattern_seed_2(draw, width, height):
+    """Diagonal lines pattern."""
+    tile_size = 8
+    for y in range(0, height, tile_size):
+        for x in range(0, width, tile_size):
+            if (x // tile_size + y // tile_size) % 2 == 0:
+                draw.rectangle([x, y, x + tile_size - 1, y + tile_size - 1], fill="black")
+
+
+def generate_pattern_seed_3(draw, width, height):
+    """Checkerboard with larger tiles."""
+    tile_size = 16
+    for y in range(0, height, tile_size):
+        for x in range(0, width, tile_size):
+            if (x // tile_size + y // tile_size) % 2 == 1:
+                draw.rectangle([x, y, x + tile_size - 1, y + tile_size - 1], fill="black")
+
+
+def generate_pattern_seed_4(draw, width, height):
+    """Diagonal lines in opposite direction."""
+    tile_size = 8
+    for y in range(0, height, tile_size):
+        for x in range(0, width, tile_size):
+            if (x // tile_size - y // tile_size) % 2 == 0:
+                draw.rectangle([x, y, x + tile_size - 1, y + tile_size - 1], fill="black")
+
+
+def generate_pattern_seed_5(draw, width, height):
+    """Hard-coded black pattern (all pixels black)."""
+    for y in range(height):
+        for x in range(width):
+            if (x + y) % 2 == 0:
+                draw.point((x, y), fill="black")
+
+
+def generate_pattern_seed_6(draw, width, height):
+    """Hard-coded white pattern (minimal black pixels for contrast)."""
+    tile_size = 32
+    for y in range(0, height, tile_size):
+        for x in range(0, width, tile_size):
+            # Draw a single black pixel in the center of each tile
+            cx = x + tile_size // 2
+            cy = y + tile_size // 2
+            if cx < width and cy < height:
+                draw.point((cx, cy), fill="black")
+
+
+def generate_random_pattern(draw, width, height, seed=None):
+    """Generate a random pixel art pattern as a tiled pattern."""
+    if seed is None:
+        # Default random pattern
+        random.seed()
+        tile_size = 16
+        pattern = []
+        
+        for ty in range(tile_size):
+            for tx in range(tile_size):
+                if random.random() < 0.3:
+                    pattern.append((tx, ty))
+        
+        for y in range(0, height, tile_size):
+            for x in range(0, width, tile_size):
+                for tx, ty in pattern:
+                    px, py = x + tx, y + ty
+                    if px < width and py < height:
+                        draw.point((px, py), fill="black")
+    elif seed == 1:
+        generate_pattern_seed_1(draw, width, height)
+    elif seed == 2:
+        generate_pattern_seed_2(draw, width, height)
+    elif seed == 3:
+        generate_pattern_seed_3(draw, width, height)
+    elif seed == 4:
+        generate_pattern_seed_4(draw, width, height)
+    elif seed == 5:
+        generate_pattern_seed_5(draw, width, height)
+    elif seed == 6:
+        generate_pattern_seed_6(draw, width, height)
+    else:
+        # For other seeds, use random pattern
+        random.seed(seed)
+        tile_size = 16
+        pattern = []
+        
+        for ty in range(tile_size):
+            for tx in range(tile_size):
+                if random.random() < 0.3:
+                    pattern.append((tx, ty))
+        
+        for y in range(0, height, tile_size):
+            for x in range(0, width, tile_size):
+                for tx, ty in pattern:
+                    px, py = x + tx, y + ty
+                    if px < width and py < height:
+                        draw.point((px, py), fill="black")
 
 
 def draw_border(draw, width, height):
@@ -168,9 +251,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate 128x128 black and white badges")
     parser.add_argument("text", help="Text to display on the badge (use \\n for newlines)")
     parser.add_argument("-o", "--output", default="badge.png", help="Output file path")
-    parser.add_argument("-s", "--seed", type=int, default=None, help="Random seed for pattern generation")
+    parser.add_argument("-s", "--seed", type=int, default=None, help="Pattern seed (1-6 for specific patterns)")
     parser.add_argument("-f", "--font-size", type=int, default=None, help="Fixed font size (overrides auto-sizing)")
-    parser.add_argument("--no-interpret-escapes", action="store_true", help="Don't interpret \\\\n as newlines")
+    parser.add_argument("--no-interpret-escapes", action="store_true", help="Don't interpret \\n as newlines")
     
     args = parser.parse_args()
     
