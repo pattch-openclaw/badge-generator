@@ -104,18 +104,6 @@ def generate_random_pattern(draw, width, height, seed=None):
                         draw.point((px, py), fill="black")
 
 
-def draw_border(draw, width, height):
-    """Draw a decorative checkerboard border."""
-    border_width = 4
-    
-    for x in range(width):
-        for y in range(height):
-            if (x < border_width or x >= width - border_width or 
-                y < border_width or y >= height - border_width):
-                if (x + y) % 2 == 0:
-                    draw.point((x, y), fill="black")
-
-
 def parse_text_lines(text, interpret_escapes=True):
     """Parse text, respecting newline breaks. Each \n becomes a separate line.
     
@@ -188,9 +176,6 @@ def generate_badge(text, output_path="badge.png", seed=None, font_size=None, int
     
     # Generate pattern
     generate_random_pattern(draw, width, height, seed)
-    
-    # Draw border
-    draw_border(draw, width, height)
     
     # Find font and lines
     padding = 8
