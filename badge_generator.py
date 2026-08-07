@@ -61,24 +61,39 @@ def get_font(font_name, size):
     Returns:
         ImageFont instance
     """
+    print(f"DEBUG: get_font called with font_name='{font_name}', size={size}")
+    
     # Try standard fonts
     standard_fonts = get_builtin_fonts()
+    print(f"DEBUG: Checking {len(standard_fonts)} standard fonts")
     for name, path in standard_fonts:
+        print(f"DEBUG:   Checking '{name}' (path: {path})")
         if font_name.lower() in name.lower():
             try:
-                return ImageFont.truetype(path, size)
-            except:
+                print(f"DEBUG:   MATCH - trying to load")
+                font = ImageFont.truetype(path, size)
+                print(f"DEBUG:   SUCCESS - loaded {font_name} at size {size}")
+                return font
+            except Exception as e:
+                print(f"DEBUG:   FAILED - {e}")
                 continue
     
     # Try Apple fonts
     apple_fonts = get_builtin_fonts_apple()
+    print(f"DEBUG: Checking {len(apple_fonts)} Apple fonts")
     for name, path in apple_fonts:
+        print(f"DEBUG:   Checking '{name}' (path: {path})")
         if font_name.lower() in name.lower():
             try:
-                return ImageFont.truetype(path, size)
-            except:
+                print(f"DEBUG:   MATCH - trying to load")
+                font = ImageFont.truetype(path, size)
+                print(f"DEBUG:   SUCCESS - loaded {font_name} at size {size}")
+                return font
+            except Exception as e:
+                print(f"DEBUG:   FAILED - {e}")
                 continue
     
+    print(f"DEBUG: No match found, falling back to default font")
     # Fallback to default font
     return ImageFont.load_default()
 
@@ -195,6 +210,7 @@ def parse_text_lines(text, interpret_escapes=True):
 def find_best_font_size(font_name, text, max_width, max_height):
     """Find the largest font size that fits the text."""
     for size in range(40, 10, -2):
+        print(f"DEBUG: find_best_font_size trying size={size}")
         font = get_font(font_name, size)
         lines = parse_text_lines(text)
         
@@ -210,10 +226,14 @@ def find_best_font_size(font_name, text, max_width, max_height):
         # Remove trailing spacing
         total_height -= 8
         
+        print(f"DEBUG:   size={size}, max_line_width={max_line_width}, total_height={total_height}")
+        
         if max_line_width <= max_width and total_height <= max_height:
+            print(f"DEBUG:   SUCCESS - using size={size}")
             return font, lines
     
     # Fallback if nothing fits
+    print(f"DEBUG:   FALLBACK - using size=12")
     return get_font(font_name, 12), [text]
 
 
@@ -229,12 +249,21 @@ def generate_badge(text, output_path="badge.png", seed=None, font_size=None,
         font_name: Font name (e.g., 'DejaVuSans', 'Helvetica', 'Courier')
         interpret_escapes: If True, interpret \\n, \\t, etc. as escape sequences
     """
+    print(f"DEBUG: generate_badge called with:")
+    print(f"DEBUG:   text='{text}'")
+    print(f"DEBUG:   output_path='{output_path}'")
+    print(f"DEBUG:   seed={seed}")
+    print(f"DEBUG:   font_size={font_size}")
+    print(f"DEBUG:   font_name='{font_name}'")
+    print(f"DEBUG:   interpret_escapes={interpret_escapes}")
+    
     width, height = 128, 128
     
     img = Image.new('1', (width, height), color=1)
     draw = ImageDraw.Draw(img)
     
     # Generate pattern
+    print(f"DEBUG: Generating pattern with seed={seed}")
     generate_random_pattern(draw, width, height, seed)
     
     # Find font and lines
@@ -242,11 +271,17 @@ def generate_badge(text, output_path="badge.png", seed=None, font_size=None,
     max_text_width = width - padding * 2
     max_text_height = height - padding * 2
     
+    print(f"DEBUG: max_text_width={max_text_width}, max_text_height={max_text_height}")
+    
     if font_size is not None:
+        print(f"DEBUG: Using fixed font_size={font_size}")
         font = get_font(font_name, font_size)
         lines = parse_text_lines(text, interpret_escapes=interpret_escapes)
     else:
+        print(f"DEBUG: Finding best font size")
         font, lines = find_best_font_size(font_name, text, max_text_width, max_text_height)
+    
+    print(f"DEBUG: Using font={font_name} with {len(lines)} lines")
     
     # Calculate total height
     total_height = 0
@@ -258,8 +293,12 @@ def generate_badge(text, output_path="badge.png", seed=None, font_size=None,
         total_height += line_height + 8
     total_height -= 8  # Remove trailing spacing
     
+    print(f"DEBUG: total_height={total_height}")
+    
     # Calculate text position for vertical centering
     y = (height - total_height) // 2
+    
+    print(f"DEBUG: y={y}")
     
     # Draw each line with background box for readability
     for i, line in enumerate(lines):
@@ -267,6 +306,8 @@ def generate_badge(text, output_path="badge.png", seed=None, font_size=None,
         text_width = bbox[2] - bbox[0]
         text_height = bbox[3] - bbox[1]
         x = (width - text_width) // 2
+        
+        print(f"DEBUG:   Line {i}='{line}', x={x}, y={y}, text_width={text_width}, text_height={text_height}")
         
         # Draw text background box with proper padding (inverted color)
         draw.rectangle([x - 2, y - 2, x + text_width + 2, y + text_height + 2], fill=0)
