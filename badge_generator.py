@@ -43,8 +43,16 @@ def draw_border(draw, width, height):
                     draw.point((x, y), fill="black")
 
 
-def parse_text_lines(text):
-    """Parse text, respecting newline breaks. Each \\n becomes a separate line."""
+def parse_text_lines(text, interpret_escapes=True):
+    """Parse text, respecting newline breaks. Each \n becomes a separate line.
+    
+    Args:
+        text: Input text
+        interpret_escapes: If True, interpret \n, \t, etc. as escape sequences
+    """
+    if interpret_escapes:
+        # Interpret common escape sequences
+        text = text.encode().decode('unicode_escape')
     return text.split('\n')
 
 
@@ -90,14 +98,15 @@ def find_best_font_size(text, max_width, max_height):
     return get_font(12), [text]
 
 
-def generate_badge(text, output_path="badge.png", seed=None, font_size=None):
+def generate_badge(text, output_path="badge.png", seed=None, font_size=None, interpret_escapes=True):
     """Generate a 128x128 badge.
     
     Args:
-        text: Text to display (newlines \\n create line breaks)
+        text: Text to display (use \n for newlines if interpret_escapes=True)
         output_path: Output file path
         seed: Random seed for pattern generation
         font_size: Fixed font size (optional, uses auto-sizing if None)
+        interpret_escapes: If True, interpret \\n, \\t, etc. as escape sequences
     """
     width, height = 128, 128
     
@@ -117,7 +126,7 @@ def generate_badge(text, output_path="badge.png", seed=None, font_size=None):
     
     if font_size is not None:
         font = get_font(font_size)
-        lines = parse_text_lines(text)
+        lines = parse_text_lines(text, interpret_escapes=interpret_escapes)
     else:
         font, lines = find_best_font_size(text, max_text_width, max_text_height)
     
@@ -157,11 +166,13 @@ if __name__ == "__main__":
     import argparse
     
     parser = argparse.ArgumentParser(description="Generate 128x128 black and white badges")
-    parser.add_argument("text", help="Text to display on the badge")
+    parser.add_argument("text", help="Text to display on the badge (use \\n for newlines)")
     parser.add_argument("-o", "--output", default="badge.png", help="Output file path")
     parser.add_argument("-s", "--seed", type=int, default=None, help="Random seed for pattern generation")
     parser.add_argument("-f", "--font-size", type=int, default=None, help="Fixed font size (overrides auto-sizing)")
+    parser.add_argument("--no-interpret-escapes", action="store_true", help="Don't interpret \\\\n as newlines")
     
     args = parser.parse_args()
     
-    generate_badge(args.text, args.output, seed=args.seed, font_size=args.font_size)
+    interpret_escapes = not args.no_interpret_escapes
+    generate_badge(args.text, args.output, seed=args.seed, font_size=args.font_size, interpret_escapes=interpret_escapes)

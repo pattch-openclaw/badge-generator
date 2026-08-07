@@ -3,7 +3,7 @@
 A simple Python script to generate 128x128 black and white PNG badges with:
 
 - Random tiled pixel art patterns (use different seeds to generate new patterns)
-- Newline support (each `\n` creates a line break)
+- Newline support (each `\\n` creates a line break)
 - Auto-sizing bold font to fit all text
 - Fixed font size option for manual control
 - White text on black background for readability
@@ -20,7 +20,8 @@ python badge_generator.py "YOUR TEXT" [-s seed] [-f font_size]
 
 ```bash
 # Generate with random pattern (auto-sizing font)
-python badge_generator.py "CONF\n2026"
+python badge_generator.py $'CONF\\n2026'  # Use $'...' in bash/zsh for escape sequences
+python badge_generator.py "CONF\\\\n2026"  # Or double backslash
 
 # Generate with specific seed
 python badge_generator.py "CONF" -s 42
@@ -33,3 +34,4 @@ python badge_generator.py "TEST" -f 24
 
 - `-s, --seed` - Random seed for pattern generation (use same seed to reproduce pattern)
 - `-f, --font-size` - Fixed font size (overrides auto-sizing)
+- `--no-interpret-escapes` - Don't interpret escape sequences (use literal \\n)
