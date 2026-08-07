@@ -8,6 +8,12 @@ import random
 import sys
 
 
+def parse_text_lines(text):
+    """Parse text, respecting newline breaks."""
+    # Split on newlines - each \n becomes a separate line
+    return text.split('\n')
+
+
 def generate_random_pattern(draw, width, height, seed=None):
     """Generate a random pixel art pattern as a tiled pattern."""
     if seed is not None:
@@ -43,28 +49,6 @@ def draw_border(draw, width, height):
                     draw.point((x, y), fill="black")
 
 
-def wrap_text(draw, text, font, max_width):
-    """Wrap text to fit within max_width, breaking on whitespace."""
-    words = text.split()
-    if not words:
-        return []
-    
-    lines = []
-    current_line = words[0]
-    
-    for word in words[1:]:
-        test_line = current_line + " " + word
-        test_width = draw.textlength(test_line, font=font)
-        if test_width <= max_width:
-            current_line = test_line
-        else:
-            lines.append(current_line)
-            current_line = word
-    
-    lines.append(current_line)
-    return lines
-
-
 def find_best_font_size(draw, text, max_width, max_height):
     """Find the largest font size that fits the text with proper wrapping."""
     for size in range(40, 10, -2):
@@ -76,7 +60,7 @@ def find_best_font_size(draw, text, max_width, max_height):
             except:
                 continue
         
-        lines = wrap_text(draw, text, font, max_width)
+        lines = parse_text_lines(text)
         line_height = font.getbbox('M')[3] - font.getbbox('M')[1]
         total_height = line_height * len(lines) + 8 * (len(lines) - 1)
         
@@ -87,8 +71,15 @@ def find_best_font_size(draw, text, max_width, max_height):
     return ImageFont.load_default(), [text]
 
 
-def generate_badge(text, output_path="badge.png", seed=None):
-    """Generate a 128x128 badge."""
+def generate_badge(text, output_path="badge.png", seed=None, font_size=None):
+    """Generate a 128x128 badge.
+    
+    Args:
+        text: Text to display (newlines \n create line breaks)
+        output_path: Output file path
+        seed: Random seed for pattern generation
+        font_size: Fixed font size (optional, uses auto-sizing if None)
+    """
     width, height = 128, 128
     
     img = Image.new('1', (width, height), color=1)
@@ -100,16 +91,42 @@ def generate_badge(text, output_path="badge.png", seed=None):
     # Draw border
     draw_border(draw, width, height)
     
-    # Find best font size
+    # Find best font size or use specified size
     padding = 8
     max_text_width = width - padding * 2
     max_text_height = height - padding * 2
     
-    font, lines = find_best_font_size(draw, text, max_text_width, max_text_height)
+    if font_size is not None:
+        try:
+            font = ImageFont.truetype("/System/Library/Fonts/Supplemental/Courier.ttc", font_size)
+        except:
+            try:
+                font = ImageFont.truetype("/opt/homebrew/share/fonts/DejaVuSansMono-Bold.ttf", font_size)
+            except:
+                font = ImageFont.load_default()
+        lines = parse_text_lines(text)
+    else:
+        font, lines = find_best_font_size(draw, text, max_text_width, max_text_height)
     
-    # Wrap and center text
+    # Calculate total height
     line_height = font.getbbox('M')[3] - font.getbbox('M')[1]
     total_height = line_height * len(lines) + 8 * (len(lines) - 1)
+    
+    # If text doesn't fit with auto-sizing, try smaller font
+    if font_size is None and total_height > max_text_height:
+        for size in range(30, 10, -2):
+            try:
+                font = ImageFont.truetype("/System/Library/Fonts/Supplemental/Courier.ttc", size)
+            except:
+                try:
+                    font = ImageFont.truetype("/opt/homebrew/share/fonts/DejaVuSansMono-Bold.ttf", size)
+                except:
+                    continue
+            lines = parse_text_lines(text)
+            line_height = font.getbbox('M')[3] - font.getbbox('M')[1]
+            total_height = line_height * len(lines) + 8 * (len(lines) - 1)
+            if total_height <= max_text_height:
+                break
     
     # Calculate text position for vertical centering
     y = (height - total_height) // 2
@@ -120,8 +137,8 @@ def generate_badge(text, output_path="badge.png", seed=None):
         x = (width - text_width) // 2
         
         # Draw text background box (inverted color)
-        text_height = line_height
-        draw.rectangle([x - 2, y - 2, x + text_width + 2, y + text_height + 2], fill=0)
+        text_height_px = line_height
+        draw.rectangle([x - 2, y - 2, x + text_width + 2, y + text_height_px + 2], fill=0)
         
         # Draw text (white on black background)
         draw.text((x, y), line, fill=1, font=font)
@@ -133,14 +150,14 @@ def generate_badge(text, output_path="badge.png", seed=None):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python badge_generator.py 'YOUR TEXT' [-s seed]")
-        sys.exit(1)
+    import argparse
     
-    text = sys.argv[1]
-    seed = None
+    parser = argparse.ArgumentParser(description="Generate 128x128 black and white badges")
+    parser.add_argument("text", help="Text to display on the badge")
+    parser.add_argument("-o", "--output", default="badge.png", help="Output file path")
+    parser.add_argument("-s", "--seed", type=int, default=None, help="Random seed for pattern generation")
+    parser.add_argument("-f", "--font-size", type=int, default=None, help="Fixed font size (overrides auto-sizing)")
     
-    if len(sys.argv) >= 4 and sys.argv[2] == "-s":
-        seed = int(sys.argv[3])
+    args = parser.parse_args()
     
-    generate_badge(text, seed=seed)
+    generate_badge(args.text, args.output, seed=args.seed, font_size=args.font_size)
