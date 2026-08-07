@@ -18,12 +18,12 @@ python badge_generator.py "YOUR TEXT" [-s seed] [-f font_size]
 
 ## Pattern Seeds
 
-- **Seed 1** - Vertical lines (8px tiles, alternating columns)
-- **Seed 2** - Diagonal lines (8px tiles, positive slope)
+- **Seed 1** - Vertical lines (16px tiles, alternating columns)
+- **Seed 2** - Diagonal lines (16px tiles, positive slope)
 - **Seed 3** - Checkerboard (16px tiles, inverted colors)
-- **Seed 4** - Diagonal lines (8px tiles, negative slope)
-- **Seed 5** - Hard-coded black pattern (high contrast)
-- **Seed 6** - Hard-coded white pattern (minimal dots)
+- **Seed 4** - Diagonal lines (16px tiles, negative slope)
+- **Seed 5** - All black
+- **Seed 6** - All white (no pattern)
 - **No seed** - Random noise pattern
 
 ## Examples

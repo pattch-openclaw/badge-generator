@@ -9,8 +9,8 @@ import sys
 
 
 def generate_pattern_seed_1(draw, width, height):
-    """Vertical lines pattern."""
-    tile_size = 8
+    """Vertical lines pattern - wide columns."""
+    tile_size = 16
     for y in range(0, height, tile_size):
         for x in range(0, width, tile_size):
             if x // tile_size % 2 == 0:
@@ -18,8 +18,8 @@ def generate_pattern_seed_1(draw, width, height):
 
 
 def generate_pattern_seed_2(draw, width, height):
-    """Diagonal lines pattern."""
-    tile_size = 8
+    """Diagonal lines pattern - wide diagonal stripes."""
+    tile_size = 16
     for y in range(0, height, tile_size):
         for x in range(0, width, tile_size):
             if (x // tile_size + y // tile_size) % 2 == 0:
@@ -37,7 +37,7 @@ def generate_pattern_seed_3(draw, width, height):
 
 def generate_pattern_seed_4(draw, width, height):
     """Diagonal lines in opposite direction."""
-    tile_size = 8
+    tile_size = 16
     for y in range(0, height, tile_size):
         for x in range(0, width, tile_size):
             if (x // tile_size - y // tile_size) % 2 == 0:
@@ -45,23 +45,13 @@ def generate_pattern_seed_4(draw, width, height):
 
 
 def generate_pattern_seed_5(draw, width, height):
-    """Hard-coded black pattern (all pixels black)."""
-    for y in range(height):
-        for x in range(width):
-            if (x + y) % 2 == 0:
-                draw.point((x, y), fill="black")
+    """Hard-coded black pattern - all black."""
+    draw.rectangle([0, 0, width - 1, height - 1], fill="black")
 
 
 def generate_pattern_seed_6(draw, width, height):
-    """Hard-coded white pattern (minimal black pixels for contrast)."""
-    tile_size = 32
-    for y in range(0, height, tile_size):
-        for x in range(0, width, tile_size):
-            # Draw a single black pixel in the center of each tile
-            cx = x + tile_size // 2
-            cy = y + tile_size // 2
-            if cx < width and cy < height:
-                draw.point((cx, cy), fill="black")
+    """Hard-coded white pattern - no black pixels."""
+    pass  # Background is already white (color=1)
 
 
 def generate_random_pattern(draw, width, height, seed=None):
