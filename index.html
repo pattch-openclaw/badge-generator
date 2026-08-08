@@ -32,7 +32,7 @@
             gap: 30px;
             flex-wrap: wrap;
             justify-content: center;
-            max-width: 1200px;
+            max-width: 1400px;
             width: 100%;
         }
 
@@ -40,6 +40,10 @@
             flex: 1;
             min-width: 300px;
             max-width: 400px;
+        }
+
+        .pattern-editor {
+            flex: 0 0 auto;
         }
 
         .preview {
@@ -161,12 +165,85 @@
             width: 128px;
             height: 128px;
             image-rendering: pixelated;
+            cursor: crosshair;
         }
 
         .hint {
             font-size: 12px;
             color: #888;
             margin-top: 5px;
+        }
+
+        /* Pattern editor styles */
+        .pattern-editor-container {
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .pattern-title {
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .pattern-grid {
+            display: grid;
+            grid-template-columns: repeat(16, 20px);
+            grid-template-rows: repeat(16, 20px);
+            gap: 2px;
+            margin: 0 auto;
+            background-color: #1a1a1a;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        .grid-cell {
+            width: 20px;
+            height: 20px;
+            background-color: #000000;
+            border: 1px solid #333;
+            cursor: pointer;
+            transition: background-color 0.1s;
+        }
+
+        .grid-cell.active {
+            background-color: #ffffff;
+            border-color: #666;
+        }
+
+        .pattern-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .pattern-btn {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        .pattern-btn.clear {
+            background-color: #d32f2f;
+        }
+
+        .pattern-btn.clear:hover {
+            background-color: #c62828;
+        }
+
+        .pattern-btn.random {
+            background-color: #ff9800;
+        }
+
+        .pattern-btn.random:hover {
+            background-color: #f57c00;
+        }
+
+        .pattern-btn.invert {
+            background-color: #9c27b0;
+        }
+
+        .pattern-btn.invert:hover {
+            background-color: #8e24aa;
         }
     </style>
 </head>
@@ -212,6 +289,19 @@
             <button class="download-btn" id="downloadBtn" disabled>Download Badge (PNG)</button>
         </div>
         
+        <div class="pattern-editor">
+            <div class="pattern-editor-container">
+                <div class="pattern-title">Pattern Editor (16x16)</div>
+                <div class="pattern-grid" id="patternGrid"></div>
+                <div class="pattern-controls">
+                    <button class="pattern-btn clear" id="clearBtn">Clear</button>
+                    <button class="pattern-btn random" id="randomBtn">Random</button>
+                    <button class="pattern-btn invert" id="invertBtn">Invert</button>
+                </div>
+                <p class="hint">Click cells to toggle them. The pattern will be repeated to fill the badge background.</p>
+            </div>
+        </div>
+        
         <div class="preview">
             <div class="badge-container">
                 <canvas id="badgeCanvas" width="128" height="128"></canvas>
@@ -228,11 +318,92 @@
         const fontFamilySelect = document.getElementById('fontFamily');
         const fontSizeInput = document.getElementById('fontSize');
         const fontSizeValue = document.getElementById('fontSizeValue');
+        const patternGrid = document.getElementById('patternGrid');
 
         // Badge configuration
         const CANVAS_SIZE = 128;
         const FONT_COLOR = '#ffffff';
         const BACKGROUND_COLOR = '#000000';
+        const GRID_SIZE = 16;
+
+        // Pattern state - 16x16 grid of 0s and 1s
+        let pattern = Array(GRID_SIZE * GRID_SIZE).fill(0);
+
+        // Initialize pattern grid
+        function initPatternGrid() {
+            patternGrid.innerHTML = '';
+            for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell';
+                cell.dataset.index = i;
+                if (pattern[i] === 1) {
+                    cell.classList.add('active');
+                }
+                cell.addEventListener('mousedown', handleGridClick);
+                cell.addEventListener('mouseenter', handleGridHover);
+                patternGrid.appendChild(cell);
+            }
+        }
+
+        // Handle grid cell clicks
+        let isMouseDown = false;
+        let dragMode = 'toggle'; // 'toggle', 'setActive', 'setInactive'
+
+        document.addEventListener('mousedown', () => { isMouseDown = true; });
+        document.addEventListener('mouseup', () => { isMouseDown = false; });
+
+        function handleGridClick(e) {
+            const index = parseInt(e.target.dataset.index);
+            if (pattern[index] === 1) {
+                pattern[index] = 0;
+                e.target.classList.remove('active');
+            } else {
+                pattern[index] = 1;
+                e.target.classList.add('active');
+            }
+            generatePreview();
+        }
+
+        function handleGridHover(e) {
+            if (isMouseDown) {
+                const index = parseInt(e.target.dataset.index);
+                pattern[index] = 1;
+                e.target.classList.add('active');
+                generatePreview();
+            }
+        }
+
+        // Pattern actions
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            pattern = pattern.map(() => 0);
+            initPatternGrid();
+            generatePreview();
+        });
+
+        document.getElementById('randomBtn').addEventListener('click', () => {
+            pattern = pattern.map(() => Math.random() > 0.5 ? 1 : 0);
+            initPatternGrid();
+            generatePreview();
+        });
+
+        document.getElementById('invertBtn').addEventListener('click', () => {
+            pattern = pattern.map(p => p === 1 ? 0 : 1);
+            initPatternGrid();
+            generatePreview();
+        });
+
+        // Pattern drawing functions
+        function drawPattern() {
+            const tileSize = 8; // 16x8 = 128px tiles
+            for (let y = 0; y < GRID_SIZE; y++) {
+                for (let x = 0; x < GRID_SIZE; x++) {
+                    if (pattern[y * GRID_SIZE + x] === 1) {
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+                    }
+                }
+            }
+        }
 
         function drawBadge(text) {
             // Get current settings
@@ -243,7 +414,10 @@
             ctx.fillStyle = BACKGROUND_COLOR;
             ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
-            // Calculate optimal font size if auto-sizing
+            // Draw pattern background
+            drawPattern();
+
+            // Calculate optimal font size
             const autoFontSize = calculateOptimalFontSize(text, fontFamily, CANVAS_SIZE);
             const finalFontSize = Math.min(fontSize, autoFontSize);
 
@@ -333,7 +507,8 @@
             debounceTimer = setTimeout(generatePreview, 300);
         });
 
-        // Initial generation
+        // Initial setup
+        initPatternGrid();
         generatePreview();
     </script>
 </body>
