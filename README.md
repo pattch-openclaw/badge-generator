@@ -1,7 +1,27 @@
 # Badge Generator
 
-A simple Python script to generate 128x128 black and white PNG badges with:
+A badge generation tool with both Python CLI and web interface options.
 
+## Web Interface (Recommended)
+
+The easiest way to generate badges is using the web interface:
+
+1. Open `index.html` in your browser
+2. Type your text in the multiline text area
+3. Click "Generate Preview" to see the result
+4. Click "Download Badge (PNG)" to save
+
+The web interface features:
+- Live preview of your badge
+- Multi-line text support
+- One-click download as PNG
+- Simple black background with white text
+
+## Python CLI
+
+A Python script for programmatic badge generation with pattern options.
+
+**Features:**
 - Random tiled pixel art patterns (use different seeds to generate new patterns)
 - Newline support (each `\n` creates a line break)
 - Auto-sizing bold font to fit all text
@@ -10,7 +30,7 @@ A simple Python script to generate 128x128 black and white PNG badges with:
 - White text on black background for readability
 - Decorative checkerboard border (disabled by default)
 
-## Usage
+**Usage:**
 
 ```bash
 pip install pillow
