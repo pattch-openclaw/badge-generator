@@ -188,9 +188,9 @@
 
         .pattern-grid {
             display: grid;
-            grid-template-columns: repeat(16, 20px);
-            grid-template-rows: repeat(16, 20px);
-            gap: 2px;
+            grid-template-columns: repeat(16, 12px);
+            grid-template-rows: repeat(16, 12px);
+            gap: 1px;
             margin: 0 auto;
             background-color: #1a1a1a;
             padding: 5px;
@@ -198,8 +198,8 @@
         }
 
         .grid-cell {
-            width: 20px;
-            height: 20px;
+            width: 12px;
+            height: 12px;
             background-color: #000000;
             border: 1px solid #333;
             cursor: pointer;
@@ -221,8 +221,6 @@
             padding: 8px 16px;
             font-size: 14px;
         }
-
-        .pattern-btn.clear {
             background-color: #d32f2f;
         }
 
@@ -394,14 +392,15 @@
 
         // Pattern drawing functions
         function drawPattern() {
-            // Each 16x16 grid cell maps to an 8x8 pixel tile on the 128x128 canvas
-            // 16 cells * 8px = 128px canvas size
-            const tileSize = 8;
+            // The 16x16 grid represents a tile pattern
+            // Each grid cell is 16x16 pixels, so the 16x16 tile repeats 8x8 times to fill 128x128
+            // (16 cells × 16px) × (8 repeats) = 128px canvas
+            const cellSize = 16;
             for (let y = 0; y < GRID_SIZE; y++) {
                 for (let x = 0; x < GRID_SIZE; x++) {
                     if (pattern[y * GRID_SIZE + x] === 1) {
                         ctx.fillStyle = '#ffffff';
-                        ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+                        ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
                     }
                 }
             }
