@@ -394,7 +394,9 @@
 
         // Pattern drawing functions
         function drawPattern() {
-            const tileSize = 8; // 16x8 = 128px tiles
+            // Each 16x16 grid cell maps to an 8x8 pixel tile on the 128x128 canvas
+            // 16 cells * 8px = 128px canvas size
+            const tileSize = 8;
             for (let y = 0; y < GRID_SIZE; y++) {
                 for (let x = 0; x < GRID_SIZE; x++) {
                     if (pattern[y * GRID_SIZE + x] === 1) {
