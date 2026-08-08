@@ -75,6 +75,41 @@
             border-color: #666;
         }
 
+        select, input[type="range"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #444;
+            border-radius: 6px;
+            background-color: #2a2a2a;
+            color: #ffffff;
+            font-size: 14px;
+        }
+
+        select:focus, input[type="range"]:focus {
+            outline: none;
+            border-color: #666;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            height: 8px;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background-color: #4a9eff;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .range-value {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+
         button {
             padding: 12px 24px;
             border: none;
@@ -114,18 +149,18 @@
         .badge-container {
             position: relative;
             background-color: #000000;
-            padding: 20px;
+            padding: 10px;
             border-radius: 8px;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-width: 200px;
-            min-height: 200px;
         }
 
         canvas {
             border: 1px solid #333;
-            max-width: 100%;
+            width: 128px;
+            height: 128px;
+            image-rendering: pixelated;
         }
 
         .hint {
@@ -146,6 +181,32 @@
                 <p class="hint">This text will be displayed on the badge</p>
             </div>
             
+            <div class="control-group">
+                <label for="fontFamily">Font Family</label>
+                <select id="fontFamily">
+                    <option value="monospace">Monospace</option>
+                    <option value="sans-serif">Sans Serif</option>
+                    <option value="serif">Serif</option>
+                    <option value="system-ui">System UI</option>
+                    <option value="courier, monospace">Courier New</option>
+                    <option value="times new roman, serif">Times New Roman</option>
+                    <option value="arial, sans-serif">Arial</option>
+                    <option value="verdana, sans-serif">Verdana</option>
+                    <option value="georgia, serif">Georgia</option>
+                    <option value="trebuchet ms, sans-serif">Trebuchet MS</option>
+                    <option value="helvetica, sans-serif">Helvetica</option>
+                    <option value="comic sans ms, cursive">Comic Sans MS</option>
+                    <option value="impact, sans-serif">Impact</option>
+                    <option value="lucida console, monospace">Lucida Console</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="fontSize">Font Size</label>
+                <input type="range" id="fontSize" min="10" max="60" value="24">
+                <p class="range-value" id="fontSizeValue">24px</p>
+            </div>
+            
             <button class="generate-btn" id="generateBtn">Generate Preview</button>
             
             <button class="download-btn" id="downloadBtn" disabled>Download Badge (PNG)</button>
@@ -153,7 +214,7 @@
         
         <div class="preview">
             <div class="badge-container">
-                <canvas id="badgeCanvas" width="320" height="320"></canvas>
+                <canvas id="badgeCanvas" width="128" height="128"></canvas>
             </div>
         </div>
     </div>
@@ -164,46 +225,71 @@
         const generateBtn = document.getElementById('generateBtn');
         const downloadBtn = document.getElementById('downloadBtn');
         const badgeText = document.getElementById('badgeText');
+        const fontFamilySelect = document.getElementById('fontFamily');
+        const fontSizeInput = document.getElementById('fontSize');
+        const fontSizeValue = document.getElementById('fontSizeValue');
 
-        // Default white font on black background
-        const FONT_FAMILY = 'monospace';
-        const FONT_SIZE = 24;
+        // Badge configuration
+        const CANVAS_SIZE = 128;
         const FONT_COLOR = '#ffffff';
         const BACKGROUND_COLOR = '#000000';
 
         function drawBadge(text) {
+            // Get current settings
+            const fontFamily = fontFamilySelect.value;
+            const fontSize = parseInt(fontSizeInput.value);
+
             // Clear canvas with black background
             ctx.fillStyle = BACKGROUND_COLOR;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
-            // Calculate text dimensions and position
-            ctx.font = `bold ${FONT_SIZE}px ${FONT_FAMILY}`;
+            // Calculate optimal font size if auto-sizing
+            const autoFontSize = calculateOptimalFontSize(text, fontFamily, CANVAS_SIZE);
+            const finalFontSize = Math.min(fontSize, autoFontSize);
+
+            // Set up text styling
+            ctx.font = `bold ${finalFontSize}px ${fontFamily}`;
             ctx.fillStyle = FONT_COLOR;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
 
             // Handle multi-line text
             const lines = text.split('\n');
-            const lineHeight = FONT_SIZE * 1.4;
+            const lineHeight = finalFontSize * 1.4;
             const totalHeight = lines.length * lineHeight;
-            const startY = (canvas.height - totalHeight) / 2 + FONT_SIZE / 2;
+            const startY = (CANVAS_SIZE - totalHeight) / 2 + finalFontSize / 2;
 
             lines.forEach((line, index) => {
                 const y = startY + index * lineHeight;
-                const lineWidth = ctx.measureText(line).width;
-                const x = canvas.width / 2;
+                const x = CANVAS_SIZE / 2;
 
                 // Add slight text shadow for better visibility
                 ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-                ctx.shadowBlur = 4;
-                ctx.shadowOffsetX = 2;
-                ctx.shadowOffsetY = 2;
+                ctx.shadowBlur = 2;
+                ctx.shadowOffsetX = 1;
+                ctx.shadowOffsetY = 1;
 
                 ctx.fillText(line, x, y);
                 
                 // Reset shadow
                 ctx.shadowColor = 'transparent';
             });
+        }
+
+        function calculateOptimalFontSize(text, fontFamily, maxSize) {
+            // Start with large font and scale down
+            let fontSize = 60;
+            ctx.font = `bold ${fontSize}px ${fontFamily}`;
+
+            const lines = text.split('\n');
+            const maxLineWidth = Math.max(...lines.map(line => ctx.measureText(line).width));
+            const maxLines = lines.length;
+
+            // Check if text is too wide or too tall
+            const widthRatio = maxSize / maxLineWidth;
+            const heightRatio = maxSize / (maxLines * fontSize * 1.4);
+
+            return Math.floor(Math.min(60, widthRatio * fontSize, heightRatio * fontSize));
         }
 
         function generatePreview() {
@@ -230,6 +316,15 @@
         // Event listeners
         generateBtn.addEventListener('click', generatePreview);
         downloadBtn.addEventListener('click', downloadBadge);
+        
+        // Font family change
+        fontFamilySelect.addEventListener('change', generatePreview);
+        
+        // Font size change
+        fontSizeInput.addEventListener('input', () => {
+            fontSizeValue.textContent = `${fontSizeInput.value}px`;
+            generatePreview();
+        });
         
         // Auto-generate on text change (debounced)
         let debounceTimer;
