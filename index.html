@@ -188,27 +188,25 @@
 
         .pattern-grid {
             display: grid;
-            grid-template-columns: repeat(16, 12px);
-            grid-template-rows: repeat(16, 12px);
-            gap: 1px;
+            grid-template-columns: repeat(16, 8px);
+            grid-template-rows: repeat(16, 8px);
+            gap: 0;
             margin: 0 auto;
             background-color: #1a1a1a;
-            padding: 5px;
+            padding: 2px;
             border-radius: 4px;
         }
 
         .grid-cell {
-            width: 12px;
-            height: 12px;
+            width: 8px;
+            height: 8px;
             background-color: #000000;
-            border: 1px solid #333;
             cursor: pointer;
             transition: background-color 0.1s;
         }
 
         .grid-cell.active {
             background-color: #ffffff;
-            border-color: #666;
         }
 
         .pattern-controls {
@@ -221,6 +219,8 @@
             padding: 8px 16px;
             font-size: 14px;
         }
+
+        .pattern-btn.clear {
             background-color: #d32f2f;
         }
 
@@ -296,7 +296,7 @@
                     <button class="pattern-btn random" id="randomBtn">Random</button>
                     <button class="pattern-btn invert" id="invertBtn">Invert</button>
                 </div>
-                <p class="hint">Click cells to toggle them. The pattern will be repeated to fill the badge background.</p>
+                <p class="hint">Click cells to toggle them. Each cell represents a 16x16 pixel tile on the badge.</p>
             </div>
         </div>
         
@@ -323,6 +323,7 @@
         const FONT_COLOR = '#ffffff';
         const BACKGROUND_COLOR = '#000000';
         const GRID_SIZE = 16;
+        const TILE_SIZE = 8; // 16x16 grid with 8px cells = 128px canvas
 
         // Pattern state - 16x16 grid of 0s and 1s
         let pattern = Array(GRID_SIZE * GRID_SIZE).fill(0);
@@ -345,7 +346,6 @@
 
         // Handle grid cell clicks
         let isMouseDown = false;
-        let dragMode = 'toggle'; // 'toggle', 'setActive', 'setInactive'
 
         document.addEventListener('mousedown', () => { isMouseDown = true; });
         document.addEventListener('mouseup', () => { isMouseDown = false; });
@@ -392,15 +392,13 @@
 
         // Pattern drawing functions
         function drawPattern() {
-            // The 16x16 grid represents a tile pattern
-            // Each grid cell is 16x16 pixels, so the 16x16 tile repeats 8x8 times to fill 128x128
-            // (16 cells × 16px) × (8 repeats) = 128px canvas
-            const cellSize = 16;
+            // Draw the 16x16 pattern as tiles across the 128x128 canvas
+            // Each cell in the 16x16 grid = 8x8 pixels on canvas
             for (let y = 0; y < GRID_SIZE; y++) {
                 for (let x = 0; x < GRID_SIZE; x++) {
                     if (pattern[y * GRID_SIZE + x] === 1) {
                         ctx.fillStyle = '#ffffff';
-                        ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                        ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
                     }
                 }
             }
